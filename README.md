@@ -4,14 +4,14 @@ Your task: Design trays for each player's components for the game [Red Dust Rebe
  - To understand what components end up where during play.
  - To understnad which components each asymetric faction has.
 
-You'll find detailed images that provide measurements for each component type. There are also images that show the included player boards. These player boards are what we intend to replace with the 3d trays you will design. The player boards that were included are not very functional. They have a player aid on the reverse side whcih you're unable to use during play because your components are on their designated spots.
+You'll find detailed images that provide measurements for each component type. There are also images that show the included player boards. These player boards are what we intend to replace with the 3d trays you will design. The player boards that were included are not very functional. They have a player aid on the reverse side which you're unable to use during play because your components are on their designated spots.
 
 ## Desired Features & Requirements
-Here's a list of feature followed by a list of requirements which must be hadhered to.
+Here's a list of features followed by a list of requirements which must be adhered to.
 
 Features:  
 
- - Provide all gameplay indicators on the trays, that the included boards provide. For example, the player boards indicate the number of bases you have built. They also indicate when you may draw a card (depending on your faction)
+ - Provide all gameplay indicators on the trays that the included boards provide. For example, the player boards indicate the number of bases you have built. They also indicate when you may draw a card (depending on your faction)
  - Provide a spot for faction units on the trays. Some factions use hexagons, others use cubes. It would be nice if the ones that use hexagons have an inlay specifically designed for that shape. They ought to 'nest' nicely in the tray. You can make some interesting shapes with hexagons next to each other. Have fun with this detail
  - If there's room, a nice detail would be to allow for a faction inlay to be added. I included some samples from another game's 3d printed player trays in ./images/sample-baltic-empires ([baltic empires](https://www.gmtgames.com/p-954-baltic-empires-the-northern-wars-of-1558-1721.aspx) hapens to be another GMT game).
 

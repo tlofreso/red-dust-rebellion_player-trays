@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Slicer output: sliced files are specific to one printer and filament.
+# The models themselves (models/*.3mf, models/stl/*.stl) are kept.
+*.gcode
+*.gcode.3mf
+/result.json
+
+# Claude Code per-machine settings
+.claude/settings.local.json

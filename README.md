@@ -25,4 +25,4 @@ Requirements:
 Oh, by the way... one of the images did not turn out. It was showing the height of the hexagons. For your information, the height of the hexagons is 10mm.
 
 I enjoy using tinkercad, and I print using BambuStudio. I have a Bambu P1S.
-# red-dust-rebellion_player-trays
+

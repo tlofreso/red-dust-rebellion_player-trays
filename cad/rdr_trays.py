@@ -10,8 +10,8 @@ Run from the project root:
     uv run cad/rdr_trays.py              # models + previews
     uv run cad/rdr_trays.py --no-previews
 
-Writes models/<faction>.3mf (tray, lid, lid dot and tray inlay on one plate),
-models/lid-ams.3mf (lid with the dot as a separate part, for printing the dot
+Writes models/<faction>.3mf (tray, lid, lid dot and tray inlay on one plate;
+the spares tray gets a plain lid with no dot), models/lid-ams.3mf (lid with the dot as a separate part, for printing the dot
 in with the AMS), models/stl/*.stl and previews/*.png.
 
 Layout of the box recess (144 x 120 x 40 mm): two columns of trays side by
@@ -210,6 +210,7 @@ class Tray:
 
     def __init__(self, key):
         self.key = key
+        self.plain_lid = False   # True: lid without the colour-dot recess
         self.decks = []      # (cross-section, top z)
         self.cuts = []       # manifolds
         self.pockets = []    # (name, cross-section) footprints for the layout check
@@ -412,9 +413,10 @@ def stack_rim():
 DOT_AT = (LID_CX, LY / 2)
 
 
-def build_lid(recessed=True):
-    """Lid in its closed position (tray coordinates): plain, with a round recess for the colour
-    inlay and a finger groove at each end. recessed=False leaves the top face untouched."""
+def build_lid(recessed=True, dot=True):
+    """Lid in its closed position (tray coordinates), with a round recess for the colour
+    inlay and a finger groove at each end. dot=False leaves out the inlay recess (the plain
+    lid for the spares tray); recessed=False leaves the top face untouched."""
     lid = lid_blank()
     # notches that click over the detent bumps, at both ends so the lid works either way round
     for x in (DETENT_X, LID_END - DETENT_X):
@@ -422,7 +424,8 @@ def build_lid(recessed=True):
             lid -= prism(rect(x - 1.0, y0, x + 1.0, y1), ZL - 0.1, ZL + BUMP_H + 0.2)
     if not recessed:
         return lid
-    lid -= prism(at(circle(DOT_D + 2 * DOT_CLR), *DOT_AT), H - DOT_T, H + 1)
+    if dot:
+        lid -= prism(at(circle(DOT_D + 2 * DOT_CLR), *DOT_AT), H - DOT_T, H + 1)
     # a finger groove across each end, square-walled so a fingertip or nail can push the lid either way
     for x in (GROOVE_IN, LID_END - GROOVE_IN):
         groove = rrect(x - GROOVE_W / 2, LY / 2 - GROOVE_L / 2, x + GROOVE_W / 2, LY / 2 + GROOVE_L / 2, GROOVE_W / 2)
@@ -610,8 +613,9 @@ def tray_earthgov():
 def tray_spares():
     """Plain lidded bin that fills the sixth slot."""
     t = Tray("spares")
+    t.plain_lid = True
     t.pockets.append(("open bin", rect(0, 0, U, V)))
-    t.notes.append("Single open bin for anything left over.")
+    t.notes.append("Single open bin for anything left over. Plain lid, no colour dot.")
     return t
 
 
@@ -841,7 +845,10 @@ def main():
     to_bed = (-box[0], -box[1], -box[2])          # lid lies wide face down, as it prints
     lid_bed, dot_fill_bed = lid.translate(to_bed), dot_fill.translate(to_bed)
     dot, tile = build_dot(), build_tile()
+    plain_lid = build_lid(dot=False)
+    plain_lid_bed = plain_lid.translate(to_bed)
     write_stl(stl_dir / "lid.stl", lid_bed)
+    write_stl(stl_dir / "lid-plain.stl", plain_lid_bed)
     write_stl(stl_dir / "lid-dot.stl", dot)
     write_stl(stl_dir / "inlay.stl", tile)
     write_3mf(models / "lid-ams.3mf", [("lid", [("lid", lid_bed, 1), ("dot", dot_fill_bed, 2)], (68.5, 93.0))])
@@ -853,10 +860,13 @@ def main():
             continue
         tray = builder()
         body = tray.build()
-        problems, info = check(tray, body, lid, tile)
+        problems, info = check(tray, body, plain_lid if tray.plain_lid else lid, tile)
 
         write_stl(stl_dir / f"{key}-tray.stl", body)
-        parts = [(f"{key} tray", [body], (68.5, 30.0)), ("lid", [lid_bed], (68.5, 112.0)), ("lid dot", [dot], (90.0, 205.0))]
+        if tray.plain_lid:
+            parts = [(f"{key} tray", [body], (68.5, 30.0)), ("lid", [plain_lid_bed], (68.5, 112.0))]
+        else:
+            parts = [(f"{key} tray", [body], (68.5, 30.0)), ("lid", [lid_bed], (68.5, 112.0)), ("lid dot", [dot], (90.0, 205.0))]
         if hasattr(tray, "pill_at"):
             parts.append(("inlay", [tile], (128.0, 205.0)))
         write_3mf(models / f"{key}.3mf", parts)
@@ -893,7 +903,7 @@ def main():
         def shifted(objs, dx, dy, dz):
             return [(v + np.array([dx, dy, dz]), f, c) for v, f, c in objs]
 
-        lid_mesh, dot_mesh = mesh_of(lid), mesh_of(dot_fill)
+        lid_mesh, dot_mesh, plain_lid_mesh = mesh_of(lid), mesh_of(dot_fill), mesh_of(plain_lid)
         loaded_all, closed_all = [], []
         for key, tray, body, rgb in built:
             v, f = mesh_of(body)
@@ -903,7 +913,10 @@ def main():
                 loaded.append((*mesh_of(solid), rgb))
             if hasattr(tray, "pill_at"):
                 loaded.append((*mesh_of(tile.translate((X0 + tray.pill_at[0], Y0 + tray.pill_at[1], Z_PLAT - PILL_T))), rgb))
-            closed = [(v, f, TRAY_RGB), (*lid_mesh, LID_RGB), (*dot_mesh, rgb)]
+            if tray.plain_lid:
+                closed = [(v, f, TRAY_RGB), (*plain_lid_mesh, LID_RGB)]
+            else:
+                closed = [(v, f, TRAY_RGB), (*lid_mesh, LID_RGB), (*dot_mesh, rgb)]
             loaded_all.append(loaded)
             closed_all.append(closed)
             top = preview.hstack([preview.render(empty, "top", ppm=9), preview.render(loaded, "top", ppm=9)])
